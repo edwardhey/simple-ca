@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 set -e
 
 info() {
@@ -41,15 +41,15 @@ for ca_id in ${CA_LIST//,/ }; do
     fi
 
     mkdir -p private newcerts
-    chmod 700 private
+    #chmod 700 private
     touch index.txt
 
-    if [ ! -f ca.pem ] || [ ! -f private/ca-key.pem ]; then
+    if [ ! -f private/ca.pem ] || [ ! -f private/ca-key.pem ]; then
         info "CA cert or private key not found, building CA \"$ca_id\"..."
         openssl genrsa -out private/ca-key.pem 2048
         openssl req \
             -x509 -new -nodes -days ${CA_DAYS_value:-3652} -subj "/CN=$CA_CN_value" \
-            -key private/ca-key.pem -out ca.pem
+            -key private/ca-key.pem -out private/ca.pem
         info "CA \"$ca_id\" successfully built"
     else
         info "Found CA cert and private key: $PWD"

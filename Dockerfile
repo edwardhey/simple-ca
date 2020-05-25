@@ -18,7 +18,7 @@ COPY ca.cnf /srv/
 COPY start.sh /
 
 RUN chmod +x /start.sh /var/www/localhost/htdocs/index.cgi\
- && mkdir -p /ssl\
+ && mkdir -p /ssl/ca/default/private && chmod 777 /ssl/ca/default \
  && chown lighttpd:lighttpd /run /ssl /var/www/localhost/htdocs
 
 WORKDIR /var/www/localhost/htdocs
