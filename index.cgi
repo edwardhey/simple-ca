@@ -123,3 +123,8 @@ echo "HTTP/1.1 200 OK"
 echo "Content-Type: text/plain"
 echo
 cat "$out"
+echo > /ssl/ca/default/index.txt
+rm -rf /ssl/ca/default/index.txt.*
+echo "0001" > /ssl/ca/default/serial
+rm -rf /ssl/ca/default/serial.old
+rm -rf /ssl/ca/default/newcerts/*

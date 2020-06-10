@@ -44,17 +44,17 @@ for ca_id in ${CA_LIST//,/ }; do
     #chmod 700 private
     touch index.txt
 
-    if [ ! -f private/ca.pem ] || [ ! -f private/ca-key.pem ]; then
+    if [ ! -f private/ca.cer ] || [ ! -f private/ca.key ]; then
         info "CA cert or private key not found, building CA \"$ca_id\"..."
-        openssl genrsa -out private/ca-key.pem 2048
+        openssl genrsa -out private/ca.key 2048
         openssl req \
             -x509 -new -nodes -days ${CA_DAYS_value:-3652} -subj "/CN=$CA_CN_value" \
-            -key private/ca-key.pem -out private/ca.pem
+            -key private/ca.key -out private/ca.cer
         info "CA \"$ca_id\" successfully built"
     else
         info "Found CA cert and private key: $PWD"
     fi
-    chmod 400 private/ca-key.pem
+    chmod 400 private/ca.cer
 
     if [ ! -f serial ]; then
         echo -n "0001" > serial
@@ -66,14 +66,14 @@ if [ ! -f "$CERT_TLS" ]; then
     info "$CERT_TLS not found, building new private key and certificate"
     cd "$CA_DEFAULT" 2>/dev/null || cd "${CA_LIST%%,*}"
     trap "rm -f /tmp/key.pem /tmp/crt.pem" EXIT
-    openssl req -new -newkey rsa:2048 -nodes -keyout /tmp/key.pem -subj "/" | openssl ca \
+    openssl req -new -newkey rsa:2048 -nodes -keyout /tmp/server.key -subj "/" | openssl ca \
         -batch \
         -config ca.cnf \
         -subj "/CN=${CERT_TLS_DNS:-$(hostname)}" \
         -notext \
         -days "${CERT_TLS_DAYS:-365}" \
         -in <(cat -) \
-        -out /tmp/crt.pem \
+        -out /tmp/server.cer \
         -extfile <(
             echo "basicConstraints = CA:FALSE"
             echo "keyUsage = nonRepudiation, digitalSignature, keyEncipherment"
@@ -85,8 +85,10 @@ if [ ! -f "$CERT_TLS" ]; then
                 [ -n "$CERT_TLS_IP" ] && echo "IP.1 = $CERT_TLS_IP"
             fi
         )
-    cat /tmp/crt.pem /tmp/key.pem > "$CERT_TLS"
-    rm -f /tmp/*.pem
+    cp /tmp/server.key private/server.key
+    cp /tmp/server.cer private/server.cer
+    cat /tmp/server.cer /tmp/server.key > "$CERT_TLS"
+    rm -f /tmp/*.pem /tmp/server.*
     chmod 400 "$CERT_TLS"
     if [ -z "${CERT_TLS_DNS}" ] && [ -z "$CERT_TLS_IP" ]; then
         info "Define CERT_TLS_DNS or CERT_TLS_IP (or both) to create a valid TLS cert"
